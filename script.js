@@ -32,10 +32,37 @@ addEventListener('touchmove', e=>{
   handleMouse({ clientX: t.clientX, clientY: t.clientY });
 },{passive:true});
 
+const getOrientationAngle = ()=>{
+  const screenOri = typeof screen !== 'undefined' && screen.orientation;
+  if(screenOri && typeof screenOri.angle === 'number') return screenOri.angle;
+  const legacy = typeof window.orientation === 'number' ? window.orientation : 0;
+  return legacy;
+};
+
 function onDeviceOrientation(ev){
-  const g = clamp(ev?.gamma ?? 0, -45, 45);
-  const b = clamp(ev?.beta  ?? 0, -45, 45);
-  devNX = lerp(devNX, (g+45)/90, 0.15);
+  if(!ev) return;
+  let gamma = ev.gamma ?? 0;
+  let beta  = ev.beta  ?? 0;
+
+  const angle = ((getOrientationAngle()%360)+360)%360; // normalize 0-359
+
+  if(angle === 0){
+    beta -= 90;
+  }else if(angle === 180){
+    beta += 90;
+    gamma = -gamma;
+  }else if(angle === 90){
+    const newGamma = beta - 90;
+    beta = -gamma;
+    gamma = newGamma;
+  }else if(angle === 270){
+    const newGamma = -(beta + 90);
+    beta = gamma;
+    gamma = newGamma;
+  }
+
+  const g = clamp(gamma, -45, 45);
+  const b = clamp(beta,  -45, 45);  devNX = lerp(devNX, (g+45)/90, 0.15);
   devNY = lerp(devNY, (b+45)/90, 0.15);
   useDevice = true;
 }
@@ -79,14 +106,14 @@ const GRID_MAX_WIDTH_DESKTOP = 1400;
 const LINES_DESKTOP=[' ALL EYES ','ON US'];
 const LINES_MOBILE =['ALL','EYES','ON','US'];
 const FONT={
-  'A':[[1,1,1],[1,0,1],[1,1,1],[1,0,1],[1,0,1]],
-  'L':[[1,0,0],[1,0,0],[1,0,0],[1,0,0],[1,1,1]],
-  'E':[[1,1,1],[1,0,0],[1,1,0],[1,0,0],[1,1,1]],
-  'Y':[[1,0,1],[0,1,0],[0,1,0],[0,1,0],[0,1,0]],
-  'S':[[1,1,1],[1,0,0],[1,1,1],[0,0,1],[1,1,1]],
-  'O':[[1,1,1],[1,0,1],[1,0,1],[1,0,1],[1,1,1]],
+  'A':[[3,1,2],[1,0,1],[1,1,1],[1,0,1],[1,0,1]],
+  'L':[[3,0,0],[1,0,0],[1,0,0],[1,0,0],[1,1,1]],
+  'E':[[3,1,1],[1,0,0],[1,1,0],[1,0,0],[1,1,1]],
+  'Y':[[1,0,3],[3,2,1],[0,1,2],[0,1,0],[3,2,0]],
+  'S':[[3,1,1],[1,0,0],[3,1,2],[0,0,1],[1,1,2]],
+  'O':[[3,1,2],[1,0,1],[1,0,1],[1,0,1],[3,1,2]],
   'N':[[1,0,1],[1,2,1],[1,1,1],[1,3,1],[1,0,1]],
-  'U':[[1,0,1],[1,0,1],[1,0,1],[1,0,1],[1,1,1]],
+  'U':[[1,0,1],[1,0,1],[1,0,1],[1,0,1],[3,1,2]],
   ' ':[[0],[0],[0],[0],[0]],
 };
 const isMobile = ()=>matchMedia('(max-width:700px)').matches;
