@@ -218,7 +218,12 @@ async function buildGridIncremental(){
   if (gridCols % 2 === 1) gridCols -= 1;
   wrap.style.setProperty('--cols', gridCols);
 
+  const { rows: requiredTextRows } = buildPhraseMask();
+  const hardRowCap = isMobile() ? Infinity : requiredTextRows + 12;
+
   gridRows = Math.max(2, Math.floor(usableH / eyePX));
+  gridRows = Math.max(requiredTextRows, gridRows);
+  if(gridRows > hardRowCap) gridRows = hardRowCap;
 
   const total = gridCols*gridRows;
   const batch = Math.max(50, Math.floor(total/30));
