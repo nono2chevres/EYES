@@ -2,8 +2,6 @@
   --bg: #0b0e11;
   --yellow: #F3BA2F;
   --eye-size: clamp(20px, 4.5vmin, 56px);
-  --header-h: 56px;
-  --footer-h: 44px;
   --sidepair: calc(var(--eye-size) * 2);
 }
 
@@ -14,23 +12,26 @@ body{
   background: var(--bg);
   color: #fff;
   font: 500 16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
 }
 
 #siteHeader, #siteFooter{ width: 100%; }
 #siteHeader{
-  height: var(--header-h);
   display: grid; place-items: center;
   border-bottom: 1px solid rgba(255,255,255,.08);
   background: rgba(0,0,0,.25);
   backdrop-filter: blur(4px);
+  padding: 12px 0;
 }
 #siteFooter{
-  height: var(--footer-h);
   display: grid; place-items: center;
   border-top: 1px solid rgba(255,255,255,.08);
   background: rgba(0,0,0,.25);
   backdrop-filter: blur(4px);
   font-size: 12px;
+  padding: 10px 0;
 }
 .inner{
   width: min(1200px, 100% - 24px);
@@ -42,7 +43,12 @@ body{
 .socials .icon svg{ width: 100%; height: 100%; fill: #fff }
 .ca code{ background: rgba(255,255,255,.08); padding: 2px 6px; border-radius: 6px }
 
-#stage{ height: calc(100svh - var(--header-h) - var(--footer-h)); position: relative; overflow: hidden; }
+#stage{
+  position: relative;
+  overflow: hidden;
+  flex: 1 1 auto;
+  min-height: 0;
+}
 
 .loader{
   position: absolute; inset: 0; display: grid; place-items: center;
