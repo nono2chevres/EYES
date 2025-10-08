@@ -71,6 +71,7 @@ const MASK_GAP_LETTER = 1;
 const MASK_GAP_SPACE  = 1;
 
 const EYE_PX_MIN = 14;
+const EYE_PX_MIN_MOBILE = 8;
 const EYE_PX_MAX = 64;
 
 // ---------- Letters ----------
@@ -88,6 +89,7 @@ const FONT={
   ' ':[[0],[0],[0],[0],[0]],
 };
 const isMobile = ()=>matchMedia('(max-width:700px)').matches;
+const isCompact = ()=>matchMedia('(max-width:600px)').matches;
 
 function buildLineMask(text){
   const rows=5; const line=Array.from({length:rows},()=>[]);
@@ -120,24 +122,49 @@ function buildPhraseMask(){
 function autoSizeEyesToFitWidth(){
   const { cols: mc } = buildPhraseMask();
   const requiredTextCols = mc * 2;
-  const sideCols = 4;
-  const targetCols = requiredTextCols + sideCols;
+  const compact = isCompact();
+  const minPx = compact ? EYE_PX_MIN_MOBILE : EYE_PX_MIN;
+  const sidePairOptions = compact ? [1, 0] : [2, 1, 0];
+  const rootStyle = document.documentElement.style;
 
-  let px = Math.min(EYE_PX_MAX, Math.floor(window.innerWidth / targetCols));
-  px = Math.max(px, EYE_PX_MIN);
+  let best = { px: minPx, cols: 2, sidePairs: sidePairOptions[sidePairOptions.length-1] ?? 0 };
 
-  let cols = 0;
-  for (let guard=0; guard<100; guard++){
-    const usableW = Math.max(0, window.innerWidth - 4*px);
-    cols = Math.floor(usableW / px);
-    if (cols % 2 === 1) cols -= 1;
-    if (cols >= requiredTextCols) break;
-    px--;
-    if (px < EYE_PX_MIN){ px = EYE_PX_MIN; break; }
+  for(const sidePairs of sidePairOptions){
+    let px = Math.min(
+      EYE_PX_MAX,
+      Math.floor(window.innerWidth / Math.max(1, requiredTextCols + sidePairs * 2))
+    );
+    px = Math.max(px, minPx);
+
+    let cols = 0;
+    for(let guard=0; guard<100; guard++){
+      const sidePadding = sidePairs * 2 * px;
+      const usableW = Math.max(0, window.innerWidth - sidePadding);
+      cols = Math.floor(usableW / px);
+      if (cols % 2 === 1) cols -= 1;
+      if (cols >= requiredTextCols){
+        rootStyle.setProperty('--eye-size', `${px}px`);
+        rootStyle.setProperty('--sidepair-scale', String(sidePairs));
+        return { px, cols };
+      }
+      px--;
+      if (px < minPx){
+        px = minPx;
+        const fallbackPadding = sidePairs * 2 * px;
+        const fallbackUsable = Math.max(0, window.innerWidth - fallbackPadding);
+        cols = Math.floor(fallbackUsable / px);
+        if (cols % 2 === 1) cols -= 1;
+        break;
+      }
+    }
+
+    best = { px, cols, sidePairs };
   }
 
-  document.documentElement.style.setProperty('--eye-size', px + 'px');
-  return { px, cols };
+  best.cols = Math.max(2, best.cols - (best.cols % 2));
+  rootStyle.setProperty('--eye-size', `${best.px}px`);
+  rootStyle.setProperty('--sidepair-scale', String(best.sidePairs));
+  return { px: best.px, cols: best.cols };
 }
 
 function clearScene(){ wrap.innerHTML=''; eyes=[]; pupils=[]; grid=[]; pairs=[]; eyeMetrics.clear?.(); }

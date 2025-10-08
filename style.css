@@ -4,7 +4,8 @@
   --eye-size: clamp(20px, 4.5vmin, 56px);
   --header-h: 56px;
   --footer-h: 44px;
-  --sidepair: calc(var(--eye-size) * 2);
+  --sidepair-scale: 2;
+  --sidepair: calc(var(--eye-size) * var(--sidepair-scale));
 }
 
 *{ box-sizing: border-box }
