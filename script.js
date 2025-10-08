@@ -119,52 +119,68 @@ function buildPhraseMask(){
   return { rows, cols, data: mask };
 }
 
-function autoSizeEyesToFitWidth(){
-  const { cols: mc } = buildPhraseMask();
+function autoSizeEyes({ viewportWidth, usableHeight }){
+  const { cols: mc, rows: mr } = buildPhraseMask();
   const requiredTextCols = mc * 2;
+  const requiredTextRows = mr;
   const compact = isCompact();
-  const minPx = compact ? EYE_PX_MIN_MOBILE : EYE_PX_MIN;
-  const sidePairOptions = compact ? [1, 0] : [2, 1, 0];
+  const minPxBase = compact ? EYE_PX_MIN_MOBILE : EYE_PX_MIN;
+  const minClamp = compact ? 2 : 3;
+  const sidePairOptions = compact ? [0] : [2, 1, 0];
   const rootStyle = document.documentElement.style;
 
-  let best = { px: minPx, cols: 2, sidePairs: sidePairOptions[sidePairOptions.length-1] ?? 0 };
+  let bestCandidate = null;
 
   for(const sidePairs of sidePairOptions){
-    let px = Math.min(
+    let pxMax = Math.min(
       EYE_PX_MAX,
-      Math.floor(window.innerWidth / Math.max(1, requiredTextCols + sidePairs * 2))
+      Math.floor(viewportWidth / Math.max(1, requiredTextCols + sidePairs * 2))
     );
-    px = Math.max(px, minPx);
+    if(!Number.isFinite(pxMax) || pxMax <= 0) pxMax = minPxBase;
+    pxMax = Math.max(pxMax, minPxBase);
 
-    let cols = 0;
-    for(let guard=0; guard<100; guard++){
+    for(let px = pxMax; px >= minClamp; px--){
       const sidePadding = sidePairs * 2 * px;
-      const usableW = Math.max(0, window.innerWidth - sidePadding);
-      cols = Math.floor(usableW / px);
+      const usableW = Math.max(0, viewportWidth - sidePadding);
+      let cols = Math.floor(usableW / px);
       if (cols % 2 === 1) cols -= 1;
-      if (cols >= requiredTextCols){
-        rootStyle.setProperty('--eye-size', `${px}px`);
-        rootStyle.setProperty('--sidepair-scale', String(sidePairs));
-        return { px, cols };
-      }
-      px--;
-      if (px < minPx){
-        px = minPx;
-        const fallbackPadding = sidePairs * 2 * px;
-        const fallbackUsable = Math.max(0, window.innerWidth - fallbackPadding);
-        cols = Math.floor(fallbackUsable / px);
-        if (cols % 2 === 1) cols -= 1;
-        break;
+      if(cols < 2) cols = 2;
+      const rows = usableHeight > 0 ? Math.floor(usableHeight / px) : requiredTextRows;
+
+      const candidate = { px, cols, rows, sidePairs };
+
+      if(cols >= requiredTextCols){
+        if(rows >= requiredTextRows){
+          rootStyle.setProperty('--eye-size', `${px}px`);
+          rootStyle.setProperty('--sidepair-scale', String(sidePairs));
+          return { px, cols };
+        }
+
+        if(!bestCandidate
+          || rows > bestCandidate.rows
+          || (rows === bestCandidate.rows && px > bestCandidate.px)){
+          bestCandidate = candidate;
+        }
+      }else if(!bestCandidate){
+        bestCandidate = candidate;
       }
     }
-
-    best = { px, cols, sidePairs };
   }
 
-  best.cols = Math.max(2, best.cols - (best.cols % 2));
-  rootStyle.setProperty('--eye-size', `${best.px}px`);
-  rootStyle.setProperty('--sidepair-scale', String(best.sidePairs));
-  return { px: best.px, cols: best.cols };
+  if(!bestCandidate){
+    bestCandidate = {
+      px: minPxBase,
+      cols: requiredTextCols,
+      rows: usableHeight > 0 ? Math.floor(usableHeight / Math.max(minClamp, 1)) : requiredTextRows,
+      sidePairs: sidePairOptions[sidePairOptions.length-1] ?? 0,
+    };
+  }
+
+  const finalCols = Math.max(2, bestCandidate.cols - (bestCandidate.cols % 2));
+  const finalPx = Math.max(minClamp, Math.min(bestCandidate.px, EYE_PX_MAX));
+  rootStyle.setProperty('--eye-size', `${finalPx}px`);
+  rootStyle.setProperty('--sidepair-scale', String(bestCandidate.sidePairs));
+  return { px: finalPx, cols: finalCols };
 }
 
 function clearScene(){ wrap.innerHTML=''; eyes=[]; pupils=[]; grid=[]; pairs=[]; eyeMetrics.clear?.(); }
@@ -186,19 +202,19 @@ function measureEyePX(){
 async function buildGridIncremental(){
   clearScene();
 
-  const fit = autoSizeEyesToFitWidth();
-  const eyePX = fit.px;
-  const sidePx = eyePX * 2;
   const vw = window.innerWidth;
   const vh = window.innerHeight;
   const headerH = header?.offsetHeight ?? 0;
   const footerH = footer?.offsetHeight ?? 0;
+  const usableH = Math.max(0, vh - headerH - footerH);
+
+  const fit = autoSizeEyes({ viewportWidth: vw, usableHeight: usableH });
+  const eyePX = fit.px;
 
   gridCols = Math.max(2, fit.cols);
   if (gridCols % 2 === 1) gridCols -= 1;
   wrap.style.setProperty('--cols', gridCols);
 
-  const usableH = Math.max(0, vh - headerH - footerH);
   gridRows = Math.max(2, Math.floor(usableH / eyePX));
 
   const total = gridCols*gridRows;
