@@ -1,0 +1,84 @@
+:root{
+  --bg: #0b0e11;
+  --yellow: #F3BA2F;
+  --eye-size: clamp(20px, 4.5vmin, 56px);
+  --header-h: 56px;
+  --footer-h: 44px;
+  --sidepair: calc(var(--eye-size) * 2);
+}
+
+*{ box-sizing: border-box }
+html, body { height: 100% }
+body{
+  margin: 0;
+  background: var(--bg);
+  color: #fff;
+  font: 500 16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+}
+
+#siteHeader, #siteFooter{ width: 100%; }
+#siteHeader{
+  height: var(--header-h);
+  display: grid; place-items: center;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  background: rgba(0,0,0,.25);
+  backdrop-filter: blur(4px);
+}
+#siteFooter{
+  height: var(--footer-h);
+  display: grid; place-items: center;
+  border-top: 1px solid rgba(255,255,255,.08);
+  background: rgba(0,0,0,.25);
+  backdrop-filter: blur(4px);
+  font-size: 12px;
+}
+.inner{
+  width: min(1200px, 100% - 24px);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.brand{ font-weight: 700; letter-spacing: .04em }
+.socials{ display: flex; gap: 14px; align-items: center; }
+.socials .icon{ width: 22px; height: 22px; display:inline-grid; place-items:center; opacity:.9 }
+.socials .icon svg{ width: 100%; height: 100%; fill: #fff }
+.ca code{ background: rgba(255,255,255,.08); padding: 2px 6px; border-radius: 6px }
+
+#stage{ height: calc(100svh - var(--header-h) - var(--footer-h)); position: relative; overflow: hidden; }
+
+.loader{
+  position: absolute; inset: 0; display: grid; place-items: center;
+  background: linear-gradient(180deg, #0b0e11 0%, #0e1318 100%); z-index: 5; transition: opacity .3s ease;
+}
+.loader.hide{ opacity: 0; pointer-events: none }
+.spinner{
+  width: 48px; height: 48px; border-radius: 50%;
+  border: 3px solid rgba(255,255,255,.15); border-top-color: #fff;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin{ to{ transform: rotate(360deg) } }
+
+.wrap{
+  position: absolute;
+  left: var(--sidepair); right: var(--sidepair); top: 0; bottom: 0;
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 10), var(--eye-size));
+  grid-auto-rows: var(--eye-size);
+  place-content: center;
+  gap: 0;
+}
+
+.eye{
+  position: relative; width: var(--eye-size); aspect-ratio: 1/1;
+  overflow: hidden; opacity: 0; transform: scale(.96);
+}
+.eye.revealed{ opacity: 1; transform: scale(1); transition: opacity .2s ease, transform .2s ease; }
+
+.eye::before{ content:""; position: absolute; inset: 0; background: #fff; }
+.eye.yellow::before{ background: var(--yellow); }
+
+.pupil{
+  position: absolute; top: 0; left: 0; width: 50%; height: 50%;
+  background: #000; z-index: 2;
+  transition: transform .06s linear, opacity .12s ease;
+}
+
+.lid{ position:absolute; left:0; right:0; top:0; height:0%; background:#000; z-index:3; }
