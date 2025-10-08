@@ -76,9 +76,32 @@ body{
 .eye.yellow::before{ background: var(--yellow); }
 
 .pupil{
-  position: absolute; top: 0; left: 0; width: 50%; height: 50%;
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 50%; height: 50%;
   background: #000; z-index: 2;
+  transform: translate(-50%, -50%) translate(var(--tx, 0px), var(--ty, 0px));
   transition: transform .06s linear, opacity .12s ease;
 }
 
 .lid{ position:absolute; left:0; right:0; top:0; height:0%; background:#000; z-index:3; }
+
+@media (max-width: 600px){
+  #siteHeader .inner,
+  #siteFooter .inner{
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 16px;
+    text-align: center;
+  }
+
+  .brand{
+    flex: 1 1 100%;
+    text-align: center;
+  }
+
+  .socials{
+    justify-content: center;
+    width: 100%;
+  }
+}

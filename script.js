@@ -232,8 +232,21 @@ function precomputeMetrics(){
   for(let i=0;i<eyes.length;i++){
     const eye=eyes[i], p=pupils[i]; if(!eye||!p) continue;
     const rEye=eye.getBoundingClientRect(), rP=p.getBoundingClientRect();
-    eyeMetrics.set(eye, { maxX: Math.max(0, rEye.width - rP.width), maxY: Math.max(0, rEye.height - rP.height) });
+    const rangeX = Math.max(0, (rEye.width  - rP.width )/2);
+    const rangeY = Math.max(0, (rEye.height - rP.height)/2);
+    eyeMetrics.set(eye, { rangeX, rangeY });
   }
+}
+
+function ensureMetrics(eye, pupil){
+  let metrics = eyeMetrics.get(eye);
+  if(metrics) return metrics;
+  const rEye=eye.getBoundingClientRect(), rP=pupil.getBoundingClientRect();
+  const rangeX = Math.max(0, (rEye.width  - rP.width )/2);
+  const rangeY = Math.max(0, (rEye.height - rP.height)/2);
+  metrics = { rangeX, rangeY };
+  eyeMetrics.set(eye, metrics);
+  return metrics;
 }
 
 function positionWhitePupilsTowardCenter(){
@@ -244,13 +257,7 @@ function positionWhitePupilsTowardCenter(){
     if(!eye || !pupil) continue;
     if(eye.classList.contains('yellow')) continue;
 
-    let metrics = eyeMetrics.get(eye);
-    if(!metrics){
-      const rect = eye.getBoundingClientRect();
-      const pupilRect = pupil.getBoundingClientRect();
-      metrics = { maxX: Math.max(0, rect.width - pupilRect.width), maxY: Math.max(0, rect.height - pupilRect.height) };
-      eyeMetrics.set(eye, metrics);
-    }
+    const metrics = ensureMetrics(eye, pupil);
 
     const rect = eye.getBoundingClientRect();
     const eyeCenterX = rect.left + rect.width/2;
@@ -260,9 +267,10 @@ function positionWhitePupilsTowardCenter(){
     const nx = clamp(dx / (window.innerWidth/2 || 1), -1, 1);
     const ny = clamp(dy / (window.innerHeight/2 || 1), -1, 1);
 
-    const targetX = ((nx + 1) / 2) * metrics.maxX;
-    const targetY = ((ny + 1) / 2) * metrics.maxY;
-    pupil.style.transform = `translate(${targetX}px, ${targetY}px)`;
+    const targetX = nx * metrics.rangeX;
+    const targetY = ny * metrics.rangeY;
+    pupil.style.setProperty('--tx', `${targetX}px`);
+    pupil.style.setProperty('--ty', `${targetY}px`);
   }
 }
 
@@ -272,16 +280,12 @@ function placePupils(){
   for(let i=0;i<eyes.length;i++){
     const eye=eyes[i]; if(!eye.classList.contains('yellow')) continue;
     const p=pupils[i]; if(!p) continue;
-    let m = eyeMetrics.get(eye);
-    if(!m){
-      const rEye=eye.getBoundingClientRect(), rP=p.getBoundingClientRect();
-      m = { maxX: Math.max(0, rEye.width - rP.width), maxY: Math.max(0, rEye.height - rP.height) };
-      eyeMetrics.set(eye, m);
-    }
+    const m = ensureMetrics(eye, p);
     const depth = 0.96 + ((i%5)*0.02);
-    const x = clamp(nx * m.maxX * depth, 0, m.maxX);
-    const y = clamp(ny * m.maxY * depth, 0, m.maxY);
-    p.style.transform = `translate(${x}px, ${y}px)`;
+    const offsetX = clamp(((nx - 0.5) * 2) * m.rangeX * depth, -m.rangeX, m.rangeX);
+    const offsetY = clamp(((ny - 0.5) * 2) * m.rangeY * depth, -m.rangeY, m.rangeY);
+    p.style.setProperty('--tx', `${offsetX}px`);
+    p.style.setProperty('--ty', `${offsetY}px`);
   }
 }
 
