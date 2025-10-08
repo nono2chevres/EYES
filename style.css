@@ -6,6 +6,7 @@
   --footer-h: 44px;
   --sidepair-scale: 2;
   --sidepair: calc(var(--eye-size) * var(--sidepair-scale));
+  --grid-max-width: 1400px;
 }
 
 *{ box-sizing: border-box }
@@ -67,7 +68,9 @@ body{
 
 .wrap{
   position: absolute;
-  left: var(--sidepair); right: var(--sidepair); top: 0; bottom: 0;
+  left: max(var(--sidepair), calc((100% - var(--grid-max-width)) / 2));
+  right: max(var(--sidepair), calc((100% - var(--grid-max-width)) / 2));
+  top: 0; bottom: 0;
   display: grid;
   grid-template-columns: repeat(var(--cols, 10), var(--eye-size));
   grid-auto-rows: var(--eye-size);

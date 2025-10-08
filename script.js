@@ -73,6 +73,7 @@ const MASK_GAP_SPACE  = 1;
 const EYE_PX_MIN = 14;
 const EYE_PX_MIN_MOBILE = 8;
 const EYE_PX_MAX = 64;
+const GRID_MAX_WIDTH_DESKTOP = 1400;
 
 // ---------- Letters ----------
 const LINES_DESKTOP=[' ALL EYES ','ON US'];
@@ -128,6 +129,7 @@ function autoSizeEyes({ viewportWidth, usableHeight }){
   const minClamp = compact ? 2 : 3;
   const sidePairOptions = compact ? [0] : [2, 1, 0];
   const rootStyle = document.documentElement.style;
+  const maxGridWidth = compact ? Infinity : GRID_MAX_WIDTH_DESKTOP;
 
   let bestCandidate = null;
 
@@ -141,7 +143,8 @@ function autoSizeEyes({ viewportWidth, usableHeight }){
 
     for(let px = pxMax; px >= minClamp; px--){
       const sidePadding = sidePairs * 2 * px;
-      const usableW = Math.max(0, viewportWidth - sidePadding);
+      const rawUsableW = Math.max(0, viewportWidth - sidePadding);
+      const usableW = Math.min(rawUsableW, maxGridWidth);
       let cols = Math.floor(usableW / px);
       if (cols % 2 === 1) cols -= 1;
       if(cols < 2) cols = 2;
