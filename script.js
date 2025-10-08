@@ -21,6 +21,34 @@ const eyeMetrics = new WeakMap();
 // ---------- Input tracking ----------
 let mouseNX=.5, mouseNY=.5, devNX=.5, devNY=.5, useDevice=false;
 
+const deviceNeutral = {
+  angle: null,
+  gamma: null,
+  beta: null,
+};
+
+function updateDeviceNeutral(angle, gamma, beta){
+  if(deviceNeutral.angle !== angle){
+    deviceNeutral.angle = angle;
+    deviceNeutral.gamma = gamma;
+    deviceNeutral.beta = beta;
+    return;
+  }
+
+  if(deviceNeutral.gamma === null) deviceNeutral.gamma = gamma;
+  if(deviceNeutral.beta  === null) deviceNeutral.beta  = beta;
+
+  const settleThreshold = 1.5;
+  const settleRate = 0.025;
+
+  if(deviceNeutral.gamma !== null && Math.abs(gamma - deviceNeutral.gamma) <= settleThreshold){
+    deviceNeutral.gamma = lerp(deviceNeutral.gamma, gamma, settleRate);
+  }
+  if(deviceNeutral.beta !== null && Math.abs(beta - deviceNeutral.beta) <= settleThreshold){
+    deviceNeutral.beta = lerp(deviceNeutral.beta, beta, settleRate);
+  }
+}
+
 function handleMouse(e){
   const vw=innerWidth, vh=innerHeight;
   mouseNX = clamp(e.clientX / vw, 0, 1);
@@ -61,8 +89,15 @@ function onDeviceOrientation(ev){
     gamma = newGamma;
   }
 
-  const g = clamp(gamma, -45, 45);
-  const b = clamp(beta,  -45, 45);  devNX = lerp(devNX, (g+45)/90, 0.15);
+  updateDeviceNeutral(angle, gamma, beta);
+
+  const neutralGamma = deviceNeutral.gamma ?? 0;
+  const neutralBeta  = deviceNeutral.beta  ?? 0;
+
+  const g = clamp(gamma - neutralGamma, -45, 45);
+  const b = clamp(beta  - neutralBeta,  -45, 45);
+
+  devNX = lerp(devNX, (g+45)/90, 0.15);
   devNY = lerp(devNY, (b+45)/90, 0.15);
   useDevice = true;
 }
